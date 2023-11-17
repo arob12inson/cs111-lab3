@@ -7,8 +7,6 @@
 
 #include <pthread.h>
 
-	//TODO Error Handling
-pthread_mutex_t l = PTHREAD_MUTEX_INITIALIZER;
 
 struct list_entry {
 	const char *key;
@@ -24,6 +22,7 @@ struct hash_table_entry {
 
 struct hash_table_v1 {
 	struct hash_table_entry entries[HASH_TABLE_CAPACITY];
+  pthread_mutex_t l;
 };
 
 struct hash_table_v1 *hash_table_v1_create()
@@ -34,6 +33,10 @@ struct hash_table_v1 *hash_table_v1_create()
 		struct hash_table_entry *entry = &hash_table->entries[i];
 		SLIST_INIT(&entry->list_head);
 	}
+  int error = pthread_mutex_init(&hash_table->l, NULL);
+  if (error != 0){
+    exit(error);
+  }
 	return hash_table;
 }
 
@@ -48,7 +51,7 @@ static struct hash_table_entry *get_hash_table_entry(struct hash_table_v1 *hash_
 
 static struct list_entry *get_list_entry(struct hash_table_v1 *hash_table,
                                          const char *key,
-                                         struct list_head *list_head)
+struct list_head *list_head)
 {
 	assert(key != NULL);
 
@@ -76,8 +79,14 @@ void hash_table_v1_add_entry(struct hash_table_v1 *hash_table,
                              uint32_t value)
 {
 	// TODO Error Handling
-	pthread_mutex_lock(&l);
+
 	struct hash_table_entry *hash_table_entry = get_hash_table_entry(hash_table, key);
+  
+	int error = pthread_mutex_lock(&hash_table->l);
+  if (error != 0){
+    exit(error);
+  }
+
 	struct list_head *list_head = &hash_table_entry->list_head;
 	struct list_entry *list_entry = get_list_entry(hash_table, key, list_head);
 
@@ -86,7 +95,10 @@ void hash_table_v1_add_entry(struct hash_table_v1 *hash_table,
 	if (list_entry != NULL) {
 		list_entry->value = value;
 	// TODO Error Handling
-		pthread_mutex_unlock(&l);
+    error = pthread_mutex_unlock(&hash_table->l);
+    if (error != 0){
+      exit(error);
+    }
 		return;
 	}
 
@@ -95,7 +107,10 @@ void hash_table_v1_add_entry(struct hash_table_v1 *hash_table,
 	list_entry->value = value;
 	SLIST_INSERT_HEAD(list_head, list_entry, pointers);
 	// TODO Error Handling
-	pthread_mutex_unlock(&l);
+	error = pthread_mutex_unlock(&hash_table->l);
+  if (error != 0){
+    exit(error);
+  }
 }
 
 uint32_t hash_table_v1_get_value(struct hash_table_v1 *hash_table,
@@ -123,6 +138,9 @@ void hash_table_v1_destroy(struct hash_table_v1 *hash_table)
 	free(hash_table);
 
 	//TODO Error Handling
-	pthread_mutex_destroy(&l);
+	int error = pthread_mutex_destroy(&hash_table->l);
+  if (error != 0) {
+    exit(error);
+  }
 
 }
