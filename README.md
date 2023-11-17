@@ -62,12 +62,13 @@ Hash table v2: 69,024 usec
 
 | Implementation   | Average Time    |
 |--------------- | --------------- |
-|  base  |    |
-| V1   | Item2.2   |
-| V2   | Item2.3   |
+|  base  | 269,500   |
+| V1   | 503,295  |
+| V2   | 70,452   |
 
 
-Version 1 is slower than the base version.
+Version 1 is slower than the base version, taking about 1.87 times the amount the time of the base
+hash table implementation.
 
 This is because we effectively don't make it multithreaded, since 1 lock means there is only 1 thread
 can look at the hash table, which is a very coarse grained lock. Only 1 thread is modifying the hash
@@ -87,9 +88,51 @@ I added a lock for each hash table entry/bucket.
 ./hash-table-tester -t 4 -50000 
 ```
 
-TODO more results, speedup measurement, and analysis on v2
+*Note* these are the same as above.
 
 results:
+
+```
+#Output1
+Generation: 32,546 usec
+Hash table base: 270,489 usec
+  - 0 missing
+Hash table v1: 505,256 usec
+  - 0 missing
+Hash table v2: 72,082 usec
+  - 0 missing
+
+```
+
+```
+#Output2
+Generation: 26,160 usec
+Hash table base: 268,675 usec
+  - 0 missing
+Hash table v1: 503,896 usec
+  - 0 missing
+Hash table v2: 70,252 usec
+  - 0 missing
+```
+
+```
+#Output3
+Generation: 26,517 usec
+Hash table base: 269,334 usec
+  - 0 missing
+Hash table v1: 500,732 usec
+  - 0 missing
+Hash table v2: 69,024 usec
+  - 0 missing
+```
+
+| Implementation   | Average Time    |
+|--------------- | --------------- |
+|  base  | 269,500   |
+| V1   | 503,295  |
+| V2   | 70,452   |
+
+The V2 is about 3.83 times faster than the base implementation (when 4 cores are used)
 
 
 When a thread is waiting for a lock, it isn't doing anything. In addition, these concurrent write issues happen very infrequently 
